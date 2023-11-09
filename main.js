@@ -1,11 +1,11 @@
 //Class Event
 class Event{
-  constructor(title, priority, date, description,dateAsObject){
+  constructor(title, priority, date, description,checkBox){
     this.title = title;
     this.priority = priority;
     this.date = date;
-    this.description = description
-    this.dateAsObject = dateAsObject;
+    this.description = description;
+    this.checkBox = checkBox;
   }
 }
 // Class EventList
@@ -14,17 +14,21 @@ class EventList{
     this.eventsList = [];
   }
   addEvent(event){
-    this.eventsList.push(event);
+    this.eventsList.splice(0,0,event);
   }
 }
 // Class CardEvent
 class CardEvent{
-  constructor(event, title, priority, date, description){
+  constructor(event, title, priority, date, description, li, deleteButton, updateButton, checkBox){
     this.event = event;
     this.title = title;
     this.priority = priority;
     this.date = date;
     this.description = description;
+    this.li = li;
+    this.deleteButton = deleteButton;
+    this.updateButton = updateButton;
+    this.checkBox = checkBox;
 
   }
 }
@@ -34,78 +38,251 @@ class CardEventList{
     this.cardEventsList = [];
   }
   addCardEvent(event){
-    this.cardEventsList.push(event);
+    this.cardEventsList.splice(0,0,event);
   }
 }
 
-// Example starter JavaScript for disabling form submissions if there are invalid fields
-(function () {
-  'use strict'
+const eventList = new EventList([]);
+const cardEventList = new CardEventList([]);
 
-  const eventList = new EventList([]);
-  const cardEventList = new CardEventList([]);
-  // Fetch all the forms we want to apply custom Bootstrap validation styles to
-  var forms = document.querySelectorAll('.needs-validation')
+//Manipulation with the local storage
+const saveToLocalStorage = () => {
+  const stringifiedEvents = JSON.stringify(eventList.eventsList);
+  console.log(stringifiedEvents);
+  localStorage.setItem('ToDoList', stringifiedEvents);
+};
 
-  // Loop over them and prevent submission
-  Array.prototype.slice.call(forms)
-    .forEach(function (form) {
-      form.addEventListener('submit', function (event) {
-        event.preventDefault()
-        if (!form.checkValidity()) {
-          event.stopPropagation()
-          form.classList.add('was-validated')
-        } else{
-          addEvent(event, eventList, cardEventList);
-          checkExpiredDate(eventList, cardEventList);
-          form.reset();
-          form.classList.remove('was-validated')
+const loadFromLocalStorage = () => {
+  const parsedData = JSON.parse(localStorage.getItem('ToDoList'));
+  console.log('🚀 ~ file: index.js:64 ~ data:', parsedData);
+  if (parsedData) {
+    eventList.eventsList = parsedData;
+    render();
+  } else {
+    eventList.eventsList = [];
+  }
+};
+
+//update screen
+const render = () => {
+  const fullList = document.getElementById('list-elements');
+  fullList.innerHTML = '';
+
+  eventList.eventsList.forEach(element =>{
+    const firstRow = document.createElement('div');
+    const secondRow = document.createElement('div');
+    const firstcolumn = document.createElement('div');
+    const secondcolumn = document.createElement('div');
+    const checkBox = document.createElement('input');
+    const firstColumnRow = document.createElement('div');
+    const secondColumnRow = document.createElement('div');
+
+    firstRow.classList.add('d-flex');
+    firstRow.classList.add('flex-row');
+    firstRow.classList.add('justify-content-between');
+
+    secondRow.classList.add('d-flex');
+    secondRow.classList.add('flex-row');
+    secondRow.classList.add('justify-content-between');
+
+    firstcolumn.classList.add('col-6');
+    secondcolumn.classList.add('col-6');
+    secondcolumn.classList.add('text-end');
+
+    firstColumnRow.classList.add('d-flex');
+    firstColumnRow.classList.add('flex-row');
+    firstColumnRow.classList.add('align-items-center');
+    secondColumnRow.classList.add('col-3');
+    secondColumnRow.classList.add('text-end');
+
+    checkBox.classList.add('form-check-input');
+    checkBox.classList.add('m-2');
+
+  
+    const cardEvent = createEventElement(element);
+
+
+    cardEvent.priority.addEventListener('click', changePriority = () => {
+      console.log(element.priority);
+        if(element.priority === 'High'){
+          cardEvent.priority.classList.remove('btn-danger');
+          cardEvent.priority.classList.add('btn-warning');
+          element.priority = 'Medium';
+        } else if(element.priority === 'Medium'){
+          cardEvent.priority.classList.remove('btn-warning');
+          cardEvent.priority.classList.add('btn-secondary');
+          element.priority = 'Low';
+        } else {
+          cardEvent.priority.classList.remove('btn-secondary');
+          cardEvent.priority.classList.add('btn-danger');
+          element.priority = 'High';
         }
-      }, false)
-    })
-})()
+      saveToLocalStorage();
+      render();
+    });
 
-const addEvent = (event,eventList, cardEventList) =>{
-  const title = event.target.title.value;
-  const priority = event.target.priority.value;
-  const date = event.target.date.value;
-  const dateAsObject = event.target.date.valueAsDate;
-  const describtion = event.target.description.value;
-  const newEvent = new Event(title, priority, date, describtion, dateAsObject);
-  eventList.addEvent(newEvent);
+    firstcolumn.append(cardEvent.deleteButton);
+    firstcolumn.append(cardEvent.updateButton);
+    secondcolumn.append(cardEvent.priority);
 
-  createEventElement(newEvent, cardEventList);
+    firstRow.append(firstcolumn);
+    firstRow.append(secondcolumn);
+
+
+    firstColumnRow.append(cardEvent.checkBox);
+    firstColumnRow.append(cardEvent.title);
+    secondColumnRow.append(cardEvent.date);
+
+    secondRow.append(firstColumnRow);
+    secondRow.append(secondColumnRow);
+
+    cardEvent.li.append(firstRow);
+    cardEvent.li.append(secondRow);
+    cardEvent.li.append(cardEvent.description);
+
+    fullList.append(cardEvent.li);
+    checkExpiredDate();
+  })
+
 }
 
-const createEventElement = (element, cardEventList)  => {
-  const listElements = document.getElementById('list-elements');
+
+const createEventElement = (element)  => {
 
   const li = document.createElement('li');
-  const h2 = document.createElement('h2');
+  const h2 = document.createElement('h3');
   const priorityFilter = document.createElement('button');
-  const h3 = document.createElement('h3');
+  const h3 = document.createElement('h5');
   const p = document.createElement('p');
+  const buttonDelete = createButtonDelete();
+  const buttonUpdate = createButtonUpdate();
+  const checkBox = document.createElement('input')
 
+  h3.classList.add('mt-2');
+
+  checkBox.type = 'checkbox';
+  checkBox.classList.add('m-2');
   li.classList.add('list-group-item');
   li.classList.add('mt-3');
 
-  h2.textContent = element.title;
+  li.style.background = 'radial-gradient(circle at 10% 20%, rgba(216, 241, 230, 0.46) 0.1%, rgba(233, 226, 226, 0.28) 90.1%)';
+  
+  buttonUpdate.addEventListener('click', () => {
+    h2.innerHTML = '';
+    p.innerHTML = '';
+    h3.innerHTML = '';
+
+    element.checkBox = 'checkBoxUnactive';
+    checkBox.checked = false;
+
+    const inputUpdate = document.createElement('input');
+    const inputDate = document.createElement('input');
+    const inputDescription = document.createElement('textarea');
+
+
+    inputUpdate.type = 'text';
+    inputUpdate.value = element.title;
+    h2.append(inputUpdate);
+
+    inputDate.type = 'date';
+    inputDate.value = element.date;
+    h3.append(inputDate);
+
+    inputDescription.value = element.description;
+    p.append(inputDescription);
+
+    buttonUpdate.innerText = 'Aprove Changes';
+    buttonUpdate.addEventListener('click', () => {
+      element.title = inputUpdate.value;
+      element.date = inputDate.value;
+      element.description = inputDescription.value;
+      buttonUpdate.innerText = 'Change';
+      saveToLocalStorage();
+      render();
+    })
+
+
+  })
+
+  checkBox.addEventListener('click', () => {
+    if(element.checkBox   === 'checkBoxActive'){
+      element.checkBox = 'checkBoxUnactive';
+      h2.innerHTML = `${element.title}`
+
+    } else if (element.checkBox === 'checkBoxUnactive'){
+      element.checkBox = 'checkBoxActive';
+      console.log(element.checkBox);
+      h2.innerHTML = `<del>${element.title}</del>`
+    }
+    saveToLocalStorage();
+  })
+
+  checkBox.id = element.checkBox;
+
+    if(checkBox.id   === 'checkBoxActive'){
+      console.log(checkBox.id);
+      h2.innerHTML = `<del>${element.title}</del>`;
+      checkBox.checked = true;
+
+    } else if (checkBox.id === 'checkBoxUnactive'){
+      h2.innerHTML = `${element.title}`;
+      checkBox.checked = false;
+    }
+
+  
   priorityFilter.textContent = element.priority;
   h3.textContent = element.date;
   p.textContent = element.description;
 
+
   priorityFilter.classList.add('btn');
   choosePriorityColor(priorityFilter, element);
 
-  addElementsOfEvent(element, h2, priorityFilter, h3, p, cardEventList);
 
-  li.append(h2);
-  li.append(priorityFilter);
-  li.append(h3);
-  li.append(p);
+  const cardEvent = new CardEvent(element,h2,priorityFilter,h3,p,li, buttonDelete, buttonUpdate, checkBox);
+  cardEventList.addCardEvent(cardEvent);
 
-  listElements.append(li);
+  return cardEvent;
 }
+
+
+const createButtonUpdate = () => {
+  const button = document.createElement('button');
+  button.textContent = 'Change';
+  button.classList.add('btn');
+  button.classList.add('btn-link');
+
+  return button;
+}
+
+
+const createButtonDelete = () => {
+  const button = document.createElement('button');
+  button.textContent = 'Delete';
+  button.classList.add('btn');
+  button.classList.add('btn-link');
+
+  const deleteButtonHandler = () =>{
+    cardEventList.cardEventsList.forEach((element,index) => {
+      console.log(element);
+      if(element.deleteButton === button){
+        cardEventList.cardEventsList.splice(index,1);
+        eventList.eventsList.forEach((eventD, indexD) => {
+          if(element.event === eventD){
+            eventList.eventsList.splice(indexD,1);
+            console.log(cardEventList.cardEventsList);
+            saveToLocalStorage();
+            render();
+          }
+        })
+      }
+    })
+  }
+
+  button.addEventListener('click', deleteButtonHandler);
+  return button;
+}
+
 //Function for choosing color for filter
 const choosePriorityColor = (priorityFilter, element) =>{
   if(element.priority === 'High'){
@@ -117,29 +294,116 @@ const choosePriorityColor = (priorityFilter, element) =>{
   }
 }
 
-//Function for add HTML elements to CardEventList
-addElementsOfEvent = (element, h2, priorityFilter, h3, p, cardEventList) => {
-  const cardEvent = new CardEvent(element,h2,priorityFilter,h3,p);
-  cardEventList.addCardEvent(cardEvent);
+//Change the color if date is expired
+checkExpiredDate = () => {
+  //Get todays date
+  const today = new Date (Date.now());
+  const todayDate = [today.getFullYear(),today.getMonth()+1,today.getDate()];
+
+  //Get and formating date from storage
+  eventList.eventsList.forEach(element => {
+    let dateArray = element.date.split('-');
+    dateArray = dateArray.map(string => {
+      if(string[0] === '0'){
+        string = string[1];
+      }
+      return parseInt(string);
+    })
+    console.log(dateArray);
+//compare date with today to understan if this date expired
+    if(todayDate[0] === dateArray[0] && todayDate[1] === dateArray[1] && todayDate[2] === dateArray[2]){
+      cardEventList.cardEventsList.forEach(cardEvent => {
+        if(cardEvent.event === element){
+          cardEvent.date.style.color = '#ff9966';
+        }
+      })
+    } else if(todayDate[0] > dateArray[0]){
+      cardEventList.cardEventsList.forEach(cardEvent => {
+        if(cardEvent.event === element){
+          cardEvent.date.style.color = 'red';
+        }
+      })
+    } else if (todayDate[0] < dateArray[0]) {
+      cardEventList.cardEventsList.forEach(cardEvent => {
+        if(cardEvent.event === element){
+          cardEvent.date.style.color = 'green';
+        }
+      });
+    } else if (todayDate[0] === dateArray[0]){
+      if(todayDate[1] > dateArray[1]){
+        cardEventList.cardEventsList.forEach(cardEvent => {
+          if(cardEvent.event === element){
+            cardEvent.date.style.color = 'red';
+          }
+        })
+      } else if (todayDate[1] < dateArray[1]){
+        cardEventList.cardEventsList.forEach(cardEvent => {
+          if(cardEvent.event === element){
+            cardEvent.date.style.color = 'green';
+          }
+        })
+      } else if (todayDate[1] === dateArray[1]){
+        if(todayDate[2] > dateArray[2]){
+          cardEventList.cardEventsList.forEach(cardEvent => {
+            if(cardEvent.event === element){
+              cardEvent.date.style.color = 'red';
+            }
+          })
+        } else if (todayDate[2] < dateArray[2]){
+          cardEventList.cardEventsList.forEach(cardEvent => {
+            if(cardEvent.event === element){
+              cardEvent.date.style.color = 'green';
+            }
+          })
+        }
+      }
+    }
+
+});
 }
 
 
-//Change the color if date is expired
-checkExpiredDate = (eventList, cardEventList) => {
-  const today = new Date (Date.now());
-  eventList.eventsList.forEach(element => {
-    if(element.dateAsObject > today){
-      cardEventList.cardEventsList.forEach(eventInList => {
-        if(eventInList.event === element){
-          eventInList.date.style.color = 'green';
+// Example starter JavaScript for disabling form submissions if there are invalid fields
+(function () {
+  'use strict'
+
+  // Fetch all the forms we want to apply custom Bootstrap validation styles to
+  var forms = document.querySelectorAll('.needs-validation')
+  loadFromLocalStorage();
+  // Loop over them and prevent submission
+  Array.prototype.slice.call(forms)
+    .forEach(function (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        if (!form.checkValidity()) {
+
+          event.stopPropagation()
+          form.classList.add('was-validated')
+
+        } else{
+
+          addEvent(event, eventList, cardEventList);
+          render(cardEventList);
+          form.reset();
+          form.classList.remove('was-validated');
+
         }
-      })
-    } else if((element.dateAsObject < today)){
-      cardEventList.cardEventsList.forEach(eventInList => {
-        if(eventInList.event === element){
-          eventInList.date.style.color = 'red';
-        }
-      })
-    }
-  })
-};
+      }, false)
+    })
+})()
+
+const addEvent = (event,eventList, cardEventList) =>{
+  const title = event.target.title.value;
+  const priority = event.target.priority.value;
+  const date = event.target.date.value;
+  const describtion = event.target.description.value;
+  const checkBoxId = 'checkBoxUnactive';
+
+
+  const newEvent = new Event(title, priority, date, describtion, checkBoxId);
+
+  eventList.addEvent(newEvent);
+  saveToLocalStorage();
+
+}
+
