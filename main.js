@@ -165,7 +165,7 @@ const createEventElement = (element)  => {
   li.classList.add('list-group-item');
   li.classList.add('mt-3');
 
-  li.style.background = 'radial-gradient(circle at 10% 20%, rgba(216, 241, 230, 0.46) 0.1%, rgba(233, 226, 226, 0.28) 90.1%)';
+  li.classList.add('bg-transparent');
   
   buttonUpdate.addEventListener('click', () => {
     h2.innerHTML = '';
@@ -182,13 +182,19 @@ const createEventElement = (element)  => {
 
     inputUpdate.type = 'text';
     inputUpdate.value = element.title;
+    inputUpdate.classList.add('form-control');
+    inputUpdate.classList.add('bg-transparent');
     h2.append(inputUpdate);
 
     inputDate.type = 'date';
     inputDate.value = element.date;
+    inputDate.classList.add('form-control');
+    inputDate.classList.add('bg-transparent');
     h3.append(inputDate);
 
     inputDescription.value = element.description;
+    inputDescription.classList.add('form-control');
+    inputDescription.classList.add('bg-transparent');
     p.append(inputDescription);
 
     buttonUpdate.innerText = 'Aprove Changes';
